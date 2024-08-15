@@ -1,76 +1,101 @@
-import React, {useState} from 'react';
-
-import '@/App.css';
-import Box from "@/component/Box";
-import rockImg from'@/assets/img/rock.png';
-import scissorImg from '@/assets/img/scissors.png';
-import paperImg from '@/assets/img/paper.png';
-
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import rockImg from "@/assets/img/rock.png";
+import scissorImg from "@/assets/img/scissors.png";
+import paperImg from "@/assets/img/paper.png";
+import "@/App.css";
+import MainBox from "@/component/MainBox";
+import {Card, CardHeader, Heading} from "@chakra-ui/react";
 
 export type Choice = {
     name: string;
     img: string;
 };
-export type resultType = "tie" | "winner" | "loser" |null;
+
+export type resultType = "tie" | "winner" | "loser" | null;
+
 interface ChoiceMap {
     rock: Choice;
     scissors: Choice;
     paper: Choice;
 }
 
-//버튼을 클릭 시 여기서 만든 객체에서 꺼내서 가지고 옴
-const choice:ChoiceMap={
-    rock:{
+const choice: ChoiceMap = {
+    rock: {
         name: 'rock',
-        img:rockImg
+        img: rockImg,
     },
-    scissors:{
+    scissors: {
         name: 'scissors',
-        img:scissorImg
+        img: scissorImg,
     },
-    paper:{
+    paper: {
         name: 'paper',
-        img:paperImg
+        img: paperImg,
     }
-}
-function App() {
-    const [userSelect,setUserSelect] = useState<Choice | null>(choice.paper)
-    const [comSelect,setComSelect] = useState<Choice | null>(choice.paper)
-    const [result,setResult] = useState<resultType|null>(null)
-    const [comeResult,setComResult] = useState<resultType|null>(null)
-    const play=(userChoice: keyof ChoiceMap)=>{
+};
 
-            const userChoiceResult = choice[userChoice];
-            setUserSelect(userChoiceResult);
+const App: React.FC = () => {
+    const [userSelect, setUserSelect] = useState<Choice | null>(null);
+    const [comSelect, setComSelect] = useState<Choice | null>(null);
+    const [result, setResult] = useState<resultType>(null);
+    const [comResult, setComResult] = useState<resultType>(null);
+    const [timer, setTimer] = useState<number>(30);
+    const [userScore, setUserScore] = useState<number>(0);
+    const [comScore, setComScore] = useState<number>(0);
+    const [showPopup, setShowPopup] = useState<boolean>(false);
 
-            const comChoiceResult = randomChoice();
-            setComSelect(comChoiceResult);
+    const navigate = useNavigate();
 
-            const userGameResult = judgement(userChoiceResult, comChoiceResult);
-            setResult(userGameResult);
+    useEffect(() => {
+        if (timer > 0) {
+            const countdown = setTimeout(() => setTimer(timer - 1), 1000);
+            return () => clearTimeout(countdown);
+        } else {
+            setShowPopup(true);
+        }
+    }, [timer]);
 
-            setComResult(comJudgement(userGameResult));
+    const handleRestart = () => {
+        navigate('/');
+    };
 
-    }
-    const randomChoice=()=>{
-            let itemArray = Object.keys(choice)as Array<keyof ChoiceMap>
-            let randomNum =Math.floor(Math.random()*(itemArray.length))
-            let finalChoice = itemArray[randomNum]
-        return (choice[finalChoice])
-    }
+    const play = (userChoice: keyof ChoiceMap) => {
+        const userChoiceResult = choice[userChoice];
+        setUserSelect(userChoiceResult);
 
-    const judgement=(user: { name: any; img?: string; }, computer: { name: any; img?: string; })=>{
-        if (user.name===computer.name){
+        const comChoiceResult = randomChoice();
+        setComSelect(comChoiceResult);
+
+        const userGameResult = judgement(userChoiceResult, comChoiceResult);
+        setResult(userGameResult);
+
+        const comGameResult = comJudgement(userGameResult);
+        setComResult(comGameResult);
+
+        updateScore(userGameResult, comGameResult);
+    };
+
+    const randomChoice = (): Choice => {
+        const itemArray = Object.keys(choice) as Array<keyof ChoiceMap>;
+        const randomNum = Math.floor(Math.random() * itemArray.length);
+        const finalChoice = itemArray[randomNum];
+        return choice[finalChoice];
+    };
+
+    const judgement = (user: Choice, computer: Choice): resultType => {
+        if (user.name === computer.name) {
             return "tie";
-        }else if (user.name==="rock"){
-            return computer.name ==='scissors'?"winner" :"loser"
-        }else if (user.name==="scissors"){
-            return computer.name ==='paper'?"winner" :"loser"
-        }else if (user.name==="paper"){
-            return computer.name ==='rock'?"winner" :"loser"
+        } else if (user.name === "rock") {
+            return computer.name === "scissors" ? "winner" : "loser";
+        } else if (user.name === "scissors") {
+            return computer.name === "paper" ? "winner" : "loser";
+        } else if (user.name === "paper") {
+            return computer.name === "rock" ? "winner" : "loser";
         }
         return "tie";
-    }
+    };
+
     const comJudgement = (result: resultType): resultType => {
         if (result === "tie") {
             return "tie";
@@ -82,20 +107,63 @@ function App() {
         return "tie";
     };
 
+    const updateScore = (userResult: resultType, comResult: resultType) => {
+        if (userResult === "winner") {
+            setUserScore((prev) => prev + 5);
+        } else if (userResult === "tie") {
+            setUserScore((prev) => prev + 3);
+        } else if (userResult === "loser") {
+            setUserScore((prev) => prev + 1);
+        }
+
+        if (comResult === "winner") {
+            setComScore((prev) => prev + 5);
+        } else if (comResult === "tie") {
+            setComScore((prev) => prev + 3);
+        } else if (comResult === "loser") {
+            setComScore((prev) => prev + 1);
+        }
+    };
+
+    const finalResult = userScore > comScore ? "You Win!" : userScore < comScore ? "Computer Wins!" : "It's a Tie!";
 
     return (
-      <div>
-        <div className="main">
-            <Box title="you" item={userSelect} result={result}/>
-            <Box title="computer" item={comSelect} result={comeResult}/>
+        <div className="app-container">
+            <div className="header">
+                <Card align='center' backgroundColor='rgba(255, 255, 255, 0.5)' >
+                    <CardHeader>
+                        <Heading size='md'  color='teal' > Time Left: {timer}s</Heading>
+                    </CardHeader>
+                </Card>
+            </div>
+            <div className="main">
+                <MainBox title="You" item={userSelect} result={result} score={userScore}/>
+                <MainBox title="Computer" item={comSelect} result={comResult} score={comScore}/>
+            </div>
+            <div className="controls">
+                <button onClick={() => play("scissors")}>
+                    <img src={scissorImg} alt="Scissors" className="control-img"/>
+                </button>
+                <button onClick={() => play("rock")}>
+                    <img src={rockImg} alt="Rock" className="control-img"/>
+                </button>
+                <button onClick={() => play("paper")}>
+                    <img src={paperImg} alt="Paper" className="control-img"/>
+                </button>
+            </div>
+
+            {showPopup && (
+                <div className="popup">
+                    <h1>Game Over</h1>
+                    <p>Final Score</p>
+                    <p>Your Score: {userScore}</p>
+                    <p>Computer Score: {comScore}</p>
+                    <h2>{finalResult}</h2>
+                    <button onClick={handleRestart}>OK</button>
+                </div>
+            )}
         </div>
-        <div>
-            <button onClick={()=>play("scissors")} >가위</button>
-            <button onClick={()=>play("rock")} >바위</button>
-            <button onClick={()=>play("paper")} >보 </button>
-        </div>
-      </div>
-  );
-}
+    );
+};
 
 export default App;
