@@ -5,7 +5,7 @@ import scissorImg from "@/assets/img/scissors.png";
 import paperImg from "@/assets/img/paper.png";
 import "@/App.css";
 import MainBox from "@/component/MainBox";
-import {Card, CardHeader, Heading} from "@chakra-ui/react";
+import {Button, Card, CardHeader, Heading} from "@chakra-ui/react";
 
 export type Choice = {
     name: string;
@@ -61,6 +61,7 @@ const App: React.FC = () => {
     };
 
     const play = (userChoice: keyof ChoiceMap) => {
+        if (showPopup) return;
         const userChoiceResult = choice[userChoice];
         setUserSelect(userChoiceResult);
 
@@ -141,13 +142,13 @@ const App: React.FC = () => {
                 <MainBox title="Computer" item={comSelect} result={comResult} score={comScore}/>
             </div>
             <div className="controls">
-                <button onClick={() => play("scissors")}>
+                <button onClick={() => play("scissors")} disabled={showPopup}>
                     <img src={scissorImg} alt="Scissors" className="control-img"/>
                 </button>
-                <button onClick={() => play("rock")}>
+                <button onClick={() => play("rock")} disabled={showPopup}>
                     <img src={rockImg} alt="Rock" className="control-img"/>
                 </button>
-                <button onClick={() => play("paper")}>
+                <button onClick={() => play("paper")} disabled={showPopup}>
                     <img src={paperImg} alt="Paper" className="control-img"/>
                 </button>
             </div>
@@ -155,12 +156,10 @@ const App: React.FC = () => {
             {showPopup && (
                 <div className="popup">
                     <h1>Game Over</h1>
-                    <p>Final Score</p>
-                    <p>Your Score: {userScore}</p>
-                    <p>Computer Score: {comScore}</p>
                     <h2>{finalResult}</h2>
-                    <button onClick={handleRestart}>OK</button>
+                    <Button onClick={handleRestart} colorScheme="teal" variant='outline'>OK</Button>
                 </div>
+
             )}
         </div>
     );
